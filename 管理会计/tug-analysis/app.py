@@ -52,7 +52,7 @@ def load_historical_data():
         return pd.DataFrame()
 
 @st.cache_data
-def load_client_data():
+def load_client_details():
     """从本地文件加载客户明细数据"""
     try:
         # 同样的路径处理方法
