@@ -7,3 +7,4 @@ plotly>=5.13.0
 openpyxl>=3.0.0
 xlrd>=2.0.1
 scikit-learn>=1.0.0
+matplotlib>=3.7.0
