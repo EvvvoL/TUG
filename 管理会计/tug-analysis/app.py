@@ -19,35 +19,62 @@ st.set_page_config(
 def load_historical_data():
     """从本地文件加载历史汇总数据"""
     try:
-        data_dir = Path("data")
+        # 方法1：使用相对于脚本位置的路径
+        current_dir = Path(__file__).parent
+        data_dir = current_dir / "data"
         file_path = data_dir / "historical_data.xlsx"
+        
+        # 方法2：如果方法1不行，尝试使用工作目录
+        if not file_path.exists():
+            data_dir = Path("data")
+            file_path = data_dir / "historical_data.xlsx"
+        
+        # 创建目录（如果不存在）
         data_dir.mkdir(exist_ok=True)
+        
+        # 调试信息
+        st.info(f"查找数据文件路径: {file_path}")
+        st.info(f"文件是否存在: {file_path.exists()}")
         
         if file_path.exists():
             data = pd.read_excel(file_path)
+            st.success(f"成功加载历史数据，共 {len(data)} 行")
             return data
         else:
-            st.warning(f"历史数据文件不存在: {file_path}")
+            # 列出当前目录结构帮助调试
+            st.error(f"历史数据文件不存在: {file_path}")
+            st.info("当前目录内容:")
+            for item in Path(".").rglob("*"):
+                st.write(f" - {item}")
             return pd.DataFrame()
     except Exception as e:
         st.error(f"加载历史数据时出错: {e}")
         return pd.DataFrame()
 
 @st.cache_data
-def load_client_details():
-    """从本地文件加载2020年客户明细数据"""
+def load_client_data():
+    """从本地文件加载客户明细数据"""
     try:
-        data_dir = Path("data")
+        # 同样的路径处理方法
+        current_dir = Path(__file__).parent
+        data_dir = current_dir / "data"
         file_path = data_dir / "2020_client_details.xlsx"
+        
+        if not file_path.exists():
+            data_dir = Path("data")
+            file_path = data_dir / "2020_client_details.xlsx"
+        
         data_dir.mkdir(exist_ok=True)
+        
+        st.info(f"查找客户数据文件路径: {file_path}")
+        st.info(f"文件是否存在: {file_path.exists()}")
         
         if file_path.exists():
             data = pd.read_excel(file_path)
-            # 将英文列名转换为中文
-            data = convert_column_names_to_chinese(data)
+            st.success(f"成功加载客户数据，共 {len(data)} 行")
             return data
         else:
-            st.warning(f"客户明细数据文件不存在: {file_path}")
+            st.error(f"客户明细数据文件不存在: {file_path}")
             return pd.DataFrame()
     except Exception as e:
         st.error(f"加载客户明细数据时出错: {e}")
