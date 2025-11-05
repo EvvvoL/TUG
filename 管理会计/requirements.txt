@@ -1,0 +1,14 @@
+text
+customer-profitability-app/
+├── app.py
+├── requirements.txt
+├── modules/
+│   ├── __init__.py
+│   ├── data_processing.py
+│   ├── tab1_overview.py
+│   ├── tab2_profitability.py
+│   ├── tab3_segmentation.py
+│   ├── tab4_cost_drivers.py
+│   ├── tab5_products.py
+│   └── tab6_recommendations.py
+└── README.md
