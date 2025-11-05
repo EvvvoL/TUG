@@ -32,13 +32,11 @@ def load_historical_data():
         # 创建目录（如果不存在）
         data_dir.mkdir(exist_ok=True)
         
-        # 调试信息
-        st.info(f"查找数据文件路径: {file_path}")
-        st.info(f"文件是否存在: {file_path.exists()}")
+
         
         if file_path.exists():
             data = pd.read_excel(file_path)
-            st.success(f"成功加载历史数据，共 {len(data)} 行")
+            
             return data
         else:
             # 列出当前目录结构帮助调试
@@ -66,12 +64,12 @@ def load_client_details():
         
         data_dir.mkdir(exist_ok=True)
         
-        st.info(f"查找客户数据文件路径: {file_path}")
-        st.info(f"文件是否存在: {file_path.exists()}")
+
         
         if file_path.exists():
             data = pd.read_excel(file_path)
-            st.success(f"成功加载客户数据，共 {len(data)} 行")
+            data = convert_column_names_to_chinese(data)
+            
             return data
         else:
             st.error(f"客户明细数据文件不存在: {file_path}")
