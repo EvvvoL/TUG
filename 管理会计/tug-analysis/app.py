@@ -6,6 +6,9 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
 from pathlib import Path
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from matplotlib.patches import FancyBboxPatch, Circle, Arrow
 
 # 配置页面
 st.set_page_config(
@@ -15,6 +18,11 @@ st.set_page_config(
 )
 
 # ==================== 数据加载函数 ====================
+import streamlit as st
+import pandas as pd
+from pathlib import Path
+import os
+
 @st.cache_data
 def load_historical_data():
     """从本地文件加载历史汇总数据"""
@@ -32,6 +40,7 @@ def load_historical_data():
         # 创建目录（如果不存在）
         data_dir.mkdir(exist_ok=True)
         
+        # 调试信息
 
         
         if file_path.exists():
@@ -670,6 +679,73 @@ def create_tab1_analysis(history_data, client_data):
 
 
     
+# 产品组合分析
+    st.subheader("📦 产品组合分析")
+
+    products = ['瓦楞纸板收入', '瓦楞纸箱收入', '模切盒收入', '组合纸箱收入', '重型瓦楞纸收入']
+    product_costs = ['瓦楞纸板成本', '瓦楞纸箱成本', '模切盒成本', '组合纸箱成本', '重型瓦楞纸成本']
+    product_names = ['瓦楞纸板', '瓦楞纸箱', '模切盒', '组合纸箱', '重型瓦楞纸']
+
+# 为每个产品定义固定颜色
+    product_colors = {
+    '瓦楞纸板': '#1f77b4',  # 蓝色
+    '瓦楞纸箱': '#ff7f0e',  # 橙色
+    '模切盒': '#2ca02c',    # 绿色
+    '组合纸箱': '#d62728',  # 红色
+    '重型瓦楞纸': '#9467bd' # 紫色
+}
+
+    product_data = []
+
+    for i, product in enumerate(products):
+        total_revenue = client_data[product].sum()
+        total_cogs = client_data[product_costs[i]].sum()
+        gross_margin = ((total_revenue - total_cogs) / total_revenue * 100) if total_revenue > 0 else 0
+    
+        product_data.append({
+        '产品': product_names[i],
+        '总收入': total_revenue,
+        '总成本': total_cogs,
+        '总毛利': total_revenue - total_cogs,
+        '毛利率': gross_margin
+    })
+
+    product_df = pd.DataFrame(product_data)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+    # 产品收入贡献饼图 - 使用固定颜色
+        fig_product_revenue = px.pie(
+            product_df,
+            values='总收入',
+            names='产品',
+            title="产品收入贡献",
+            color='产品',
+            color_discrete_map=product_colors
+        )
+        st.plotly_chart(fig_product_revenue, use_container_width=True)
+
+    with col2:
+    # 各产品毛利率对比条形图 - 使用固定颜色
+        fig_product_margin = px.bar(
+        product_df,
+        x='产品',
+        y='毛利率',
+        title="各产品毛利率对比",
+        color='产品',
+        color_discrete_map=product_colors,
+        text='毛利率'
+        )
+        fig_product_margin.update_traces(texttemplate='%{text:.1f}%', textposition='inside')
+        fig_product_margin.update_layout(
+        showlegend=False,  # 由于颜色已经固定，可以隐藏图例以避免重复
+        xaxis_title="产品",
+        yaxis_title="毛利率 (%)"
+        )
+        st.plotly_chart(fig_product_margin, use_container_width=True)
+    
+
     
     
     
@@ -855,73 +931,6 @@ def create_tab1_analysis(history_data, client_data):
     st.plotly_chart(fig_bar, use_container_width=True)
 
 
-# 产品组合分析
-    st.subheader("📦 产品组合分析")
-
-    products = ['瓦楞纸板收入', '瓦楞纸箱收入', '模切盒收入', '组合纸箱收入', '重型瓦楞纸收入']
-    product_costs = ['瓦楞纸板成本', '瓦楞纸箱成本', '模切盒成本', '组合纸箱成本', '重型瓦楞纸成本']
-    product_names = ['瓦楞纸板', '瓦楞纸箱', '模切盒', '组合纸箱', '重型瓦楞纸']
-
-# 为每个产品定义固定颜色
-    product_colors = {
-    '瓦楞纸板': '#1f77b4',  # 蓝色
-    '瓦楞纸箱': '#ff7f0e',  # 橙色
-    '模切盒': '#2ca02c',    # 绿色
-    '组合纸箱': '#d62728',  # 红色
-    '重型瓦楞纸': '#9467bd' # 紫色
-}
-
-    product_data = []
-
-    for i, product in enumerate(products):
-        total_revenue = client_data[product].sum()
-        total_cogs = client_data[product_costs[i]].sum()
-        gross_margin = ((total_revenue - total_cogs) / total_revenue * 100) if total_revenue > 0 else 0
-    
-        product_data.append({
-        '产品': product_names[i],
-        '总收入': total_revenue,
-        '总成本': total_cogs,
-        '总毛利': total_revenue - total_cogs,
-        '毛利率': gross_margin
-    })
-
-    product_df = pd.DataFrame(product_data)
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-    # 产品收入贡献饼图 - 使用固定颜色
-        fig_product_revenue = px.pie(
-            product_df,
-            values='总收入',
-            names='产品',
-            title="产品收入贡献",
-            color='产品',
-            color_discrete_map=product_colors
-        )
-        st.plotly_chart(fig_product_revenue, use_container_width=True)
-
-    with col2:
-    # 各产品毛利率对比条形图 - 使用固定颜色
-        fig_product_margin = px.bar(
-        product_df,
-        x='产品',
-        y='毛利率',
-        title="各产品毛利率对比",
-        color='产品',
-        color_discrete_map=product_colors,
-        text='毛利率'
-        )
-        fig_product_margin.update_traces(texttemplate='%{text:.1f}%', textposition='inside')
-        fig_product_margin.update_layout(
-        showlegend=False,  # 由于颜色已经固定，可以隐藏图例以避免重复
-        xaxis_title="产品",
-        yaxis_title="毛利率 (%)"
-        )
-        st.plotly_chart(fig_product_margin, use_container_width=True)
-    
-
 # 🎯 客户分层与盈利改善策略
     st.subheader("🎯 客户分层与盈利改善策略")
 
@@ -957,46 +966,42 @@ def create_tab1_analysis(history_data, client_data):
         st.metric(
         "高毛利客户",
         f"{high_margin_clients}个",
-        delta=f"{(high_margin_clients/total_clients*100):.1f}%"
+        
     )
         st.metric(
         "其中盈利客户",
         f"{high_margin_profitable}个",
-        delta=f"{(high_margin_profitable/high_margin_clients*100):.1f}%" if high_margin_clients > 0 else "0%"
+        
     )
 
     with col2:
         st.metric(
         "中毛利客户",
         f"{medium_margin_clients}个",
-        delta=f"{(medium_margin_clients/total_clients*100):.1f}%"
+        
     )
         st.metric(
         "其中盈利客户",
         f"{medium_margin_profitable}个",
-        delta=f"{(medium_margin_profitable/medium_margin_clients*100):.1f}%" if medium_margin_clients > 0 else "0%"
+        
     )
 
     with col3:
         st.metric(
         "低毛利客户",
         f"{low_margin_clients}个",
-        delta=f"{(low_margin_clients/total_clients*100):.1f}%"
+        
     )
         st.metric(
         "其中盈利客户",
         f"{low_margin_profitable}个",
-        delta=f"{(low_margin_profitable/low_margin_clients*100):.1f}%" if low_margin_clients > 0 else "0%"
+      
     )
 
 # 分层深度分析
     st.write("### 分层深度分析")
 
-# 计算各层级的利润贡献
-    high_margin_profit = client_profit_data[client_profit_data['毛利率'] >= 0.4]['净利润'].sum()
-    medium_margin_profit = client_profit_data[(client_profit_data['毛利率'] >= 0.2) & (client_profit_data['毛利率'] < 0.4)]['净利润'].sum()
-    low_margin_profit = client_profit_data[client_profit_data['毛利率'] <= 0.2]['净利润'].sum()
-    total_profit = client_profit_data['净利润'].sum()
+
 
 # 计算各层级收入贡献
     high_margin_revenue = client_profit_data[client_profit_data['毛利率'] >= 0.4]['总收入'].sum()
@@ -1004,34 +1009,62 @@ def create_tab1_analysis(history_data, client_data):
     low_margin_revenue = client_profit_data[client_profit_data['毛利率'] <= 0.2]['总收入'].sum()
     total_revenue = client_profit_data['总收入'].sum()
 
+
+# 计算各层级的利润贡献
+    high_margin_profit = client_profit_data[client_profit_data['毛利率'] >= 0.4]['净利润'].sum()
+    medium_margin_profit = client_profit_data[(client_profit_data['毛利率'] >= 0.2) & (client_profit_data['毛利率'] < 0.4)]['净利润'].sum()
+    low_margin_profit = client_profit_data[client_profit_data['毛利率'] <= 0.2]['净利润'].sum()
+    total_profit = client_profit_data['净利润'].sum()
+
+
+
 # 各层级利润和收入贡献
     st.write("#### 各层级利润和收入贡献")
     col1, col2 = st.columns(2)
 
-    with col1:
-    # 利润贡献饼图
+    with col2:
+    # 利润贡献柱状图（替代饼图，能显示负值）
         profit_data = {
         '层级': ['高毛利客户', '中毛利客户', '低毛利客户'],
         '利润': [high_margin_profit, medium_margin_profit, low_margin_profit]
         }
         profit_df = pd.DataFrame(profit_data)
     
-        fig_profit_pie = px.pie(
+    # 创建柱状图
+        fig_profit_bar = px.bar(
         profit_df,
-        values='利润',
-        names='层级',
+        x='层级',
+        y='利润',
         title="各层级利润贡献分布",
         color='层级',
         color_discrete_map={
             '高毛利客户': '#2ca02c',
             '中毛利客户': '#ff7f0e', 
             '低毛利客户': '#d62728'
-            }
+        },
+        text='利润'
         )
-        fig_profit_pie.update_traces(textposition='inside', textinfo='percent+label')
-        st.plotly_chart(fig_profit_pie, use_container_width=True)
+    
+    # 格式化柱状图
+        fig_profit_bar.update_traces(
+        texttemplate='$%{text:,.0f}',
+        textposition='inside'
+        )
+    
+    # 添加零线参考
+        fig_profit_bar.add_hline(y=0, line_dash="dash", line_color="black", annotation_text="盈亏平衡线")
+    
+    # 更新布局
+        fig_profit_bar.update_layout(
+        xaxis_title="客户层级",
+        yaxis_title="利润贡献 ($)",
+        showlegend=False
+        )
+        st.plotly_chart(fig_profit_bar, use_container_width=True)
+    
+    
 
-    with col2:
+    with col1:
     # 收入贡献饼图
         revenue_data = {
         '层级': ['高毛利客户', '中毛利客户', '低毛利客户'],
@@ -1558,24 +1591,25 @@ def create_tab2_analysis(history_data, client_data, client_profit_data, product_
         max_activity_diff = comparison_df.loc[comparison_df['次数差异%'].abs().idxmax()]
         max_cost_diff = comparison_df.loc[comparison_df['成本差异%'].abs().idxmax()]
         
-        if max_activity_diff['次数差异%'] > 0:
-            insights.append(f"**{max_activity_diff['活动类型']}**是影响客户盈利性的最重要因素，非盈利客户的{max_activity_diff['活动类型'].lower()}次数比盈利客户高{max_activity_diff['次数差异%']:.1f}%")
+
         
         if max_cost_diff['成本差异%'] > 0:
             insights.append(f"**{max_cost_diff['活动类型']}成本**是成本差异最大的因素，非盈利客户的{max_cost_diff['活动类型'].lower()}成本比盈利客户高{max_cost_diff['成本差异%']:.1f}%")
         
+        
+
+
         # 检查加急订单的影响
         expedite_data = comparison_df[comparison_df['活动类型'] == '加急订单'].iloc[0]
         if expedite_data['次数差异%'] > 50:  # 如果差异超过50%
             insights.append("**加急订单**是导致客户亏损的关键因素，非盈利客户的加急订单数量显著高于盈利客户")
         
-        # 检查设计小时数的影响
-        design_data = comparison_df[comparison_df['活动类型'] == '设计'].iloc[0]
-        if design_data['成本差异%'] > 30:  # 如果成本差异超过30%
-            insights.append("**设计服务**成本差异明显，非盈利客户的设计成本显著更高")
-        
+        insights.append("**问询成本**、**订单成本**、**运输成本**的成本差异不大，但两类问询的成本普遍较高")
+
         for i, insight in enumerate(insights, 1):
             st.info(f"{i}. {insight}")
+        
+
         
         # 改进建议
         st.subheader("🚀 基于行为画像的改进建议")
@@ -1597,9 +1631,8 @@ def create_tab2_analysis(history_data, client_data, client_profit_data, product_
         
         # 通用建议
         suggestions.extend([
-            "**客户分级管理**: 对高服务成本客户实施差异化服务策略",
-            "**服务套餐化**: 将常用服务组合成套餐，鼓励客户选择标准化服务",
-            "**预防性管理**: 识别高风险客户特征，提前干预避免亏损"
+            "**客户分级管理**: 对高服务成本客户高毛利客户实施差异化服务策略；对中低毛利客户，推荐将常用服务组合成套餐，鼓励客户选择标准化服务，限制服务成本上限",
+            "**事前培训管理**: 针对客户问询出现的集中问题组织年度/季度培训交流大会，对新引入客户提供指导性操作文件，拉通信息壁垒"
         ])
         
         for i, suggestion in enumerate(suggestions, 1):
@@ -1634,13 +1667,10 @@ def create_tab3_analysis(history_data, client_data, client_profit_data):
         **核心特征**:
         - 产品收入结构 (5个特征)
         - 作业活动频次 (5个特征) 
-        - **客户类型 (关键特征)**
+        - **客户类型 (关键特征-因客户明细表无区分，暂不影响预测)**
         - 历史毛利水平 (1个特征)
         
-        **特别关注**: 🔍
-        - **老客户贡献**: 过去3年70%业务来自老客户
-        - **客户稳定性**: 老客户通常有更稳定的盈利模式
-        - **服务效率**: 老客户作业成本通常更低
+
         
         **模型优势**:
         - 处理非线性关系
@@ -1662,15 +1692,13 @@ def create_tab3_analysis(history_data, client_data, client_profit_data):
         - 召回率: >80%
         - F1分数: >81%
         
-        **业务价值**:
-        - 识别潜在亏损客户
-        - 提供针对性改进建议
-        - 支持客户分级管理
-        - **优化老客户保留策略**
+
         """)
     
+
+        
     # 老客户分析
-    st.subheader("👥 老客户业务贡献分析")
+    
     
     if '客户类型' in client_profit_data.columns:
         # 计算老客户业务占比
@@ -2170,7 +2198,7 @@ def create_tab3_analysis(history_data, client_data, client_profit_data):
             st.error(f"批量预测失败: {str(e)}")
     
     # 模型解释性 - 特别强调老客户影响
-    st.subheader("🔬 算法解释性与老客户价值")
+    st.subheader("🔬 算法解释")
     
     col1, col2 = st.columns(2)
     
@@ -2186,15 +2214,16 @@ def create_tab3_analysis(history_data, client_data, client_profit_data):
         
         ⚖️ **平衡处理**: 自动处理类别不平衡问题
         
-        **老客户价值体现**:
+        **模型局限性**:
         
-        💎 **稳定收入**: 过去3年70%业务来自老客户
+        💎 **信息不完整**: 缺少客户合作时长、历史行为等重要维度
         
-        📈 **盈利贡献**: 老客户通常有更高的盈利比例
+        📈 **预测偏差**: 可能无法准确捕捉客户生命周期的模式
         
-        🔄 **服务效率**: 熟悉流程，作业成本更低
-        
-        🤝 **长期关系**: 建立信任，合作更顺畅
+        🔄 **业务洞察有限**: 无法分析新客户获取 vs 老客户保留的策略差异
+                    
+        💡 **静态模型**: 无法考虑外部市场因素（如竞争、经济环境）
+ 
         """)
     
     with col2:
@@ -2209,15 +2238,15 @@ def create_tab3_analysis(history_data, client_data, client_profit_data):
         
         🔄 **持续改进**: 基于预测结果优化策略
         
-        **老客户管理策略**:
+        **业务建议**:
         
-        🛡️ **客户保留**: 重点保护高价值老客户
+        🛡️ **持续监控**: 定期更新模型，适应业务变化
         
-        📊 **深度分析**: 理解老客户盈利模式
+        📊 **数据完善**: 补充客户合作时长数据，添加客户行业、规模等背景信息，收集历史行为模式数据
         
-        🔧 **服务优化**: 针对老客户特点优化服务
+        🔧 **关注高重要性特征**: 优化对盈利性影响最大的因素
         
-        📈 **价值提升**: 挖掘老客户额外价值
+        📈 **客户细分**: 基于预测概率对客户进行分级管理
         """)
     
     # 战略管理建议 - 特别强调老客户策略
@@ -2236,9 +2265,7 @@ def create_tab3_analysis(history_data, client_data, client_profit_data):
     ]
     
     for i, suggestion in enumerate(suggestions, 1):
-        if "老客户" in suggestion:
-            st.success(f"{i}. {suggestion}")
-        else:
+        
             st.write(f"{i}. {suggestion}")
             
 # ==================== 主应用 ====================
@@ -2302,8 +2329,8 @@ def main():
     
     # 标签页结构
     tab1, tab2, tab3 = st.tabs([
-        "战略概览与客户分析", 
-        "深度根因分析", 
+        "战略概览与规划", 
+        "客户利润计算逻辑与行为画像", 
         "解决方案与预测"
     ])
     
